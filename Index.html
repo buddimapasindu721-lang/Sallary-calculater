@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PASINDU Salary Calculator</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f1f5f9;margin:0;padding:14px;color:#172033}
+h1{text-align:center;color:#2563eb;font-size:25px}
+.note{text-align:center;color:#64748b}
+.day{background:white;padding:12px;margin:12px 0;border-radius:12px;box-shadow:0 2px 7px #ddd}
+h3{margin:0 0 12px;color:#2563eb}
+label{display:block;font-size:14px;margin:9px 0 5px}
+select{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px;background:white;font-size:16px}
+.total{font-weight:bold;text-align:right;margin-top:12px}
+.summary{background:#172554;color:white;padding:18px;border-radius:12px;text-align:center}
+.big{font-size:30px;font-weight:bold;margin:10px}
+button{border:0;border-radius:8px;padding:12px;font-size:15px;margin:5px 2px}
+.save{background:#2563eb;color:white}
+.reset{background:#dc2626;color:white}
+.print{background:#e2e8f0}
+</style>
+</head>
+<body>
+<h1>PASINDU SALARY CALCULATOR</h1>
+<p class="note">15 Days • Automatic Salary Calculation</p>
+
+<div class="summary">
+Total Salary - 15 Days
+<div class="big" id="grand">0</div>
+<div id="saved">Your entries save automatically on this phone.</div>
+</div>
+
+<div id="days"></div>
+
+<div style="text-align:center">
+<button class="save" onclick="saveData()">Save Now</button>
+<button class="print" onclick="window.print()">Print</button>
+<button class="reset" onclick="resetData()">Clear All</button>
+</div>
+
+<script>
+const rates = {
+ Manager: {Day:2050, Evening:2300, Night:3100},
+ Cashier: {Day:1550, Evening:1650, Night:2250}
+};
+
+const shifts = ["Day","Evening","Night"];
+const container = document.getElementById("days");
+
+for(let d=1;d<=15;d++){
+ let html = `<div class="day">
+ <h3>Day ${d}</h3>
+ <label>Position</label>
+ <select id="pos${d}" onchange="calculate()">
+ <option value="Manager">Manager</option>
+ <option value="Cashier">Cashier</option>
+ </select>`;
+
+ for(let s=1;s<=3;s++){
+  html += `<label>Shift ${s}</label>
+  <select id="shift${d}_${s}" onchange="calculate()">
+  <option value="">-- No Shift --</option>
+  <option value="Day">Day</option>
+  <option value="Evening">Evening</option>
+  <option value="Night">Night</option>
+  </select>`;
+ }
+ html += `<div class="total">Daily Total: <span id="total${d}">0</span></div></div>`;
+ container.insertAdjacentHTML("beforeend",html);
+}
+
+function calculate(){
+ let grand=0;
+ for(let d=1;d<=15;d++){
+  const pos=document.getElementById("pos"+d).value;
+  let total=0;
+  for(let s=1;s<=3;s++){
+   const shift=document.getElementById(`shift${d}_${s}`).value;
+   if(shift) total+=rates[pos][shift];
+  }
+  document.getElementById("total"+d).textContent=total.toLocaleString();
+  grand+=total;
+ }
+ document.getElementById("grand").textContent=grand.toLocaleString();
+ saveData();
+}
+
+function saveData(){
+ let data={};
+ for(let d=1;d<=15;d++){
+  data["pos"+d]=document.getElementById("pos"+d).value;
+  for(let s=1;s<=3;s++){
+   data[`shift${d}_${s}`]=document.getElementById(`shift${d}_${s}`).value;
+  }
+ }
+ try{
+  localStorage.setItem("pasinduSalaryData",JSON.stringify(data));
+  document.getElementById("saved").textContent="Saved on this phone ✓";
+ }catch(e){
+  document.getElementById("saved").textContent="Please use Save Now and keep this page open.";
+ }
+}
+
+function loadData(){
+ try{
+  const data=JSON.parse(localStorage.getItem("pasinduSalaryData")||"{}");
+  for(const key in data){
+   const el=document.getElementById(key);
+   if(el)el.value=data[key];
+  }
+ }catch(e){}
+ calculate();
+}
+
+function resetData(){
+ if(confirm("Clear all 15 days?")){
+  localStorage.removeItem("pasinduSalaryData");
+  for(let d=1;d<=15;d++){
+   document.getElementById("pos"+d).value="Manager";
+   for(let s=1;s<=3;s++)
+    document.getElementById(`shift${d}_${s}`).value="";
+  }
+  calculate();
+ }
+}
+loadData();
+</script>
+</body>
+</html>
