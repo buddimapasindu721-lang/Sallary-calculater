@@ -6,126 +6,140 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PASINDU Salary Calculator</title>
 <style>
-body{font-family:Arial,sans-serif;background:#f1f5f9;margin:0;padding:14px;color:#172033}
-h1{text-align:center;color:#2563eb;font-size:25px}
-.note{text-align:center;color:#64748b}
-.day{background:white;padding:12px;margin:12px 0;border-radius:12px;box-shadow:0 2px 7px #ddd}
-h3{margin:0 0 12px;color:#2563eb}
-label{display:block;font-size:14px;margin:9px 0 5px}
-select{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px;background:white;font-size:16px}
-.total{font-weight:bold;text-align:right;margin-top:12px}
-.summary{background:#172554;color:white;padding:18px;border-radius:12px;text-align:center}
-.big{font-size:30px;font-weight:bold;margin:10px}
-button{border:0;border-radius:8px;padding:12px;font-size:15px;margin:5px 2px}
-.save{background:#2563eb;color:white}
-.reset{background:#dc2626;color:white}
-.print{background:#e2e8f0}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#172033}
+header{background:#123c69;color:white;padding:20px 12px;text-align:center}
+h1{font-size:23px;margin:0 0 8px}
+header p{margin:0;font-size:13px}
+.summary{background:white;margin:12px;padding:15px;border-radius:12px;text-align:center}
+#grand{font-size:26px;color:#087443;font-weight:bold;margin-top:5px}
+.people{display:grid;grid-template-columns:repeat(5,minmax(260px,1fr));gap:12px;padding:12px;overflow-x:auto;align-items:start}
+.employee{background:white;border-radius:12px;padding:12px;border:1px solid #dbe3ee}
+.employee h2{font-size:19px;margin:4px 0;color:#174b83}
+.role{color:#64748b;font-size:12px;margin-bottom:12px}
+.day{border:1px solid #e2e8f0;border-radius:9px;padding:9px;margin-bottom:8px}
+.dayhead{font-weight:bold;margin-bottom:8px;display:flex;justify-content:space-between}
+.shift{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:5px 0}
+.shift label{display:flex;align-items:center;gap:5px}
+.shift input{width:17px;height:17px}
+.daily{font-size:12px;color:#087443;text-align:right;margin-top:5px}
+.total{position:sticky;bottom:0;background:#e0f2e9;padding:12px;border-radius:10px;margin-top:12px;font-weight:bold}
+.total strong{display:block;font-size:20px;color:#087443;margin-top:5px}
+.actions{text-align:center;padding:10px 12px 24px}
+button{border:0;border-radius:8px;padding:12px 16px;font-size:15px;margin:4px;cursor:pointer}
+.save{background:#174b83;color:white}
+.clear{background:#fee2e2;color:#991b1b}
+.note{font-size:12px;color:#64748b}
+@media(max-width:700px){.people{grid-template-columns:repeat(5,minmax(260px,82vw))}}
 </style>
 </head>
 <body>
+<header>
 <h1>PASINDU SALARY CALCULATOR</h1>
-<p class="note">15 Days • Automatic Salary Calculation</p>
+<p>15-Day Staff Attendance & Salary</p>
+</header>
 
 <div class="summary">
-Total Salary - 15 Days
-<div class="big" id="grand">0</div>
-<div id="saved">Your entries save automatically on this phone.</div>
+<div>ALL STAFF - GRAND TOTAL</div>
+<div id="grand">Rs. 0</div>
 </div>
 
-<div id="days"></div>
+<div class="people" id="people"></div>
 
-<div style="text-align:center">
-<button class="save" onclick="saveData()">Save Now</button>
-<button class="print" onclick="window.print()">Print</button>
-<button class="reset" onclick="resetData()">Clear All</button>
+<div class="actions">
+<button class="save" onclick="saveData()">Save Attendance</button>
+<button class="clear" onclick="clearData()">Clear All</button>
+<p class="note">Data is saved in this browser on this device.</p>
 </div>
 
 <script>
-const rates = {
- Manager: {Day:2050, Evening:2300, Night:3100},
- Cashier: {Day:1550, Evening:1650, Night:2250}
-};
+const staff=[
+{name:"Banusha",role:"Manager",rates:[2050,2300,3100]},
+{name:"Pasindu",role:"Manager",rates:[2050,2300,3100]},
+{name:"Sajith",role:"Cashier",rates:[1550,1650,2250]},
+{name:"Dilki",role:"Cashier",rates:[1550,1650,2250]},
+{name:"Orshani",role:"Cashier",rates:[1550,1650,2250]}
+];
+const shifts=["Day","Evening","Night"];
+let data={};
 
-const shifts = ["Day","Evening","Night"];
-const container = document.getElementById("days");
+try{data=JSON.parse(localStorage.getItem("pasinduSalary15")||"{}")||{};}catch(e){data={};}
 
+function money(n){return "Rs. "+n.toLocaleString("en-US");}
+
+function draw(){
+const root=document.getElementById("people");
+root.innerHTML="";
+staff.forEach((person,i)=>{
+let card=document.createElement("section");
+card.className="employee";
+card.innerHTML=`<h2>${i+1}. ${person.name}</h2>
+<div class="role">${person.role}</div>`;
 for(let d=1;d<=15;d++){
- let html = `<div class="day">
- <h3>Day ${d}</h3>
- <label>Position</label>
- <select id="pos${d}" onchange="calculate()">
- <option value="Manager">Manager</option>
- <option value="Cashier">Cashier</option>
- </select>`;
-
- for(let s=1;s<=3;s++){
-  html += `<label>Shift ${s}</label>
-  <select id="shift${d}_${s}" onchange="calculate()">
-  <option value="">-- No Shift --</option>
-  <option value="Day">Day</option>
-  <option value="Evening">Evening</option>
-  <option value="Night">Night</option>
-  </select>`;
- }
- html += `<div class="total">Daily Total: <span id="total${d}">0</span></div></div>`;
- container.insertAdjacentHTML("beforeend",html);
+let key=i+"-"+d;
+let day=document.createElement("div");
+day.className="day";
+day.innerHTML=`<div class="dayhead"><span>Day ${d}</span><span id="daily-${key}">Rs. 0</span></div>`;
+shifts.forEach((s,j)=>{
+let checked=!!(data[key]&&data[key][j]);
+let line=document.createElement("div");
+line.className="shift";
+line.innerHTML=`<label><input type="checkbox" data-key="${key}" data-shift="${j}" ${checked?"checked":""}>${s}</label><span>${money(person.rates[j])}</span>`;
+day.appendChild(line);
+});
+card.appendChild(day);
+}
+let total=document.createElement("div");
+total.className="total";
+total.innerHTML=`${person.name}'s Total<strong id="total-${i}">Rs. 0</strong>`;
+card.appendChild(total);
+root.appendChild(card);
+});
+root.querySelectorAll("input[type=checkbox]").forEach(cb=>{
+cb.addEventListener("change",()=>{
+let k=cb.dataset.key,j=Number(cb.dataset.shift);
+if(!data[k])data[k]=[false,false,false];
+data[k][j]=cb.checked;
+update();
+saveData();
+});
+});
+update();
 }
 
-function calculate(){
- let grand=0;
- for(let d=1;d<=15;d++){
-  const pos=document.getElementById("pos"+d).value;
-  let total=0;
-  for(let s=1;s<=3;s++){
-   const shift=document.getElementById(`shift${d}_${s}`).value;
-   if(shift) total+=rates[pos][shift];
-  }
-  document.getElementById("total"+d).textContent=total.toLocaleString();
-  grand+=total;
- }
- document.getElementById("grand").textContent=grand.toLocaleString();
- saveData();
+function update(){
+let grand=0;
+staff.forEach((p,i)=>{
+let total=0;
+for(let d=1;d<=15;d++){
+let k=i+"-"+d, daily=0;
+p.rates.forEach((r,j)=>{if(data[k]&&data[k][j])daily+=r;});
+total+=daily;
+let el=document.getElementById("daily-"+k);
+if(el)el.textContent=money(daily);
+}
+grand+=total;
+let el=document.getElementById("total-"+i);
+if(el)el.textContent=money(total);
+});
+document.getElementById("grand").textContent=money(grand);
 }
 
 function saveData(){
- let data={};
- for(let d=1;d<=15;d++){
-  data["pos"+d]=document.getElementById("pos"+d).value;
-  for(let s=1;s<=3;s++){
-   data[`shift${d}_${s}`]=document.getElementById(`shift${d}_${s}`).value;
-  }
- }
- try{
-  localStorage.setItem("pasinduSalaryData",JSON.stringify(data));
-  document.getElementById("saved").textContent="Saved on this phone ✓";
- }catch(e){
-  document.getElementById("saved").textContent="Please use Save Now and keep this page open.";
- }
+try{
+localStorage.setItem("pasinduSalary15",JSON.stringify(data));
+}catch(e){}
 }
 
-function loadData(){
- try{
-  const data=JSON.parse(localStorage.getItem("pasinduSalaryData")||"{}");
-  for(const key in data){
-   const el=document.getElementById(key);
-   if(el)el.value=data[key];
-  }
- }catch(e){}
- calculate();
+function clearData(){
+if(confirm("Clear all attendance for all staff?")){
+data={};
+saveData();
+draw();
+}
 }
 
-function resetData(){
- if(confirm("Clear all 15 days?")){
-  localStorage.removeItem("pasinduSalaryData");
-  for(let d=1;d<=15;d++){
-   document.getElementById("pos"+d).value="Manager";
-   for(let s=1;s<=3;s++)
-    document.getElementById(`shift${d}_${s}`).value="";
-  }
-  calculate();
- }
-}
-loadData();
+draw();
 </script>
 </body>
 </html>
